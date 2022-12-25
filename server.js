@@ -34,7 +34,14 @@ app.post("/login", async (req, res) => {
 const typeDefs = await readFile("./schema.graphql", "utf8");
 const apolloServer = new ApolloServer({ typeDefs, resolvers });
 await apolloServer.start();
-app.use("/graphql", expressMiddleware(apolloServer));
+const context = async ({ req }) => {
+  if (req.auth) {
+    const user = await User.findById(req.auth.sub);
+    return { user };
+  }
+  return {};
+};
+app.use("/graphql", expressMiddleware(apolloServer, { context }));
 
 app.listen({ port: PORT }, () => {
   console.log(`Server running on port ${PORT}`);
